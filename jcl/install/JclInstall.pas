@@ -878,7 +878,7 @@ procedure TJclInstallation.Init;
     AddOption(joJCLDefDropObsoleteCode, [goChecked], Parent);
     if (Target.RadToolKind <> brBorlandDevStudio) or (Target.IDEVersionNumber <> 3) then
       // Delphi 2005 has a compiler internal failure when compiling the JCL with UNITVERSIONING enabled
-      AddOption(joJCLDefUnitVersioning, [goChecked], Parent);
+      AddOption(joJCLDefUnitVersioning, [{goChecked}], Parent); // UnitVersioning isn't threadsafe and causes crashes in COM-Servers
 
     AddOption(joJCLDefMath, [goChecked], Parent);
     AddOption(joJCLDefMathPrecSingle, [goRadioButton], joJCLDefMath);
@@ -3297,7 +3297,7 @@ function TJclDistribution.CreateInstall(Target: TJclBorRADToolInstallation): Boo
         Result := Target.VersionNumber in [6];
       brBorlandDevStudio :
         Result := ((Target.VersionNumber in [1, 2]) and (bpDelphi32 in Target.Personalities))
-          or (Target.VersionNumber in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16]);
+          or (Target.VersionNumber in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17]);
       else
         Result := False;
     end;
@@ -3549,7 +3549,7 @@ begin
   try
     KeepSettings := True;
 
-    if RadToolInstallations.AnyInstanceRunning {$IFDEF MSWINDOWS} and not IsDebuggerAttached {$ENDIF} then
+    if RadToolInstallations.AnyInstanceRunning and (not Assigned(GUI) or not GUI.IgnoreRunningIDE) {$IFDEF MSWINDOWS} and not IsDebuggerAttached {$ENDIF} then
     begin
       if Assigned(GUI) then
         GUI.Dialog(LoadResString(@RsCloseRADTool), dtError, [drCancel]);
@@ -3557,7 +3557,7 @@ begin
       Exit;
     end;
 
-    if Assigned(LicensePage) and not LicensePage.Options[0] and not GUI.AutoAcceptMPL then
+    if Assigned(LicensePage) and not LicensePage.Options[0] and (not Assigned(GUI) or not GUI.AutoAcceptMPL) then
     begin
       if Assigned(GUI) then
         GUI.Dialog(LoadResString(@RsMissingLicenseAgreement), dtError, [drCancel]);
@@ -3866,7 +3866,7 @@ var
   I: Integer;
   AInstallation: TJclInstallation;
 begin
-  if RadToolInstallations.AnyInstanceRunning {$IFDEF MSWINDOWS} and not IsDebuggerAttached {$ENDIF} then
+  if RadToolInstallations.AnyInstanceRunning and (not Assigned(GUI) or not GUI.IgnoreRunningIDE) {$IFDEF MSWINDOWS} and not IsDebuggerAttached {$ENDIF} then
   begin
     if Assigned(GUI) then
       GUI.Dialog(LoadResString(@RsCloseRADTool), dtError, [drCancel]);
